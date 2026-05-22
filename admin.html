@@ -682,26 +682,53 @@
       <span id="modal-title-text">新增產品</span>
       <button onclick="closeProductModal()" style="background:none;border:none;color:var(--steel);cursor:pointer;font-size:1.1rem;"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="field-group"><label>產品名稱（中文）</label><input type="text" id="m-name-tw" placeholder="例：5.0&quot; TFT 彩色顯示模組"/></div>
-    <div class="field-group"><label>產品名稱（英文）</label><input type="text" id="m-name-en" placeholder="e.g. 5.0&quot; TFT Color Display Module"/></div>
+
+    <!-- 產品圖片上傳 -->
+    <div class="field-group">
+      <label>產品圖片</label>
+      <div id="img-upload-area" onclick="document.getElementById('m-img-file').click()"
+        style="border:2px dashed rgba(0,200,255,0.25);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(0,200,255,0.03);"
+        onmouseover="this.style.borderColor='rgba(0,200,255,0.5)';this.style.background='rgba(0,200,255,0.07)'"
+        onmouseout="this.style.borderColor='rgba(0,200,255,0.25)';this.style.background='rgba(0,200,255,0.03)'">
+        <div id="img-preview-wrap" style="display:none;margin-bottom:0.75rem;">
+          <img id="img-preview" src="" style="max-height:140px;border-radius:8px;max-width:100%;object-fit:contain;"/>
+        </div>
+        <div id="img-placeholder">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem;color:var(--accent);margin-bottom:0.5rem;display:block;"></i>
+          <div style="color:var(--white);font-size:0.88rem;font-weight:600;">點擊選擇圖片</div>
+          <div style="color:var(--steel);font-size:0.75rem;margin-top:0.3rem;">支援 JPG、PNG、WEBP，建議尺寸 800×500px</div>
+        </div>
+        <input type="file" id="m-img-file" accept="image/*" style="display:none;" onchange="previewImage(this)"/>
+      </div>
+      <div id="img-upload-status" style="font-size:0.78rem;margin-top:0.5rem;display:none;"></div>
+      <input type="hidden" id="m-img-url" value=""/>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="field-group"><label>產品名稱（中文）</label><input type="text" id="m-name-tw" placeholder="例：5.0&quot; TFT 彩色顯示模組"/></div>
+      <div class="field-group"><label>產品名稱（英文）</label><input type="text" id="m-name-en" placeholder="e.g. 5.0&quot; TFT Color Display Module"/></div>
+    </div>
     <div class="field-group"><label>規格說明</label><input type="text" id="m-spec" placeholder="例：800×480 / RGB / 可含觸控"/></div>
-    <div class="field-group"><label>產品類別</label>
-      <select id="m-cat">
-        <option value="mono">Mono LCM</option>
-        <option value="tft">TFT 彩色</option>
-        <option value="touch">觸控模組</option>
-        <option value="custom">客製化</option>
-      </select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="field-group"><label>產品類別</label>
+        <select id="m-cat">
+          <option value="mono">Mono LCM</option>
+          <option value="tft">TFT 彩色</option>
+          <option value="touch">觸控模組</option>
+          <option value="custom">客製化</option>
+        </select>
+      </div>
+      <div class="field-group"><label>狀態</label>
+        <select id="m-status">
+          <option value="active">上架中</option>
+          <option value="draft">草稿</option>
+        </select>
+      </div>
     </div>
     <div class="field-group"><label>詳細描述</label><textarea id="m-desc" rows="3" placeholder="產品詳細說明..."></textarea></div>
-    <div class="field-group"><label>狀態</label>
-      <select id="m-status">
-        <option value="active">上架中</option>
-        <option value="draft">草稿</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
-      <button class="btn btn-primary" onclick="saveProduct()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>儲存產品</button>
+
+    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="save-product-btn" onclick="saveProduct()"><i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>儲存產品</button>
       <button class="btn btn-secondary" onclick="closeProductModal()">取消</button>
     </div>
   </div>
@@ -824,6 +851,60 @@ function loadSavedData() {
 }
 loadSavedData();
 
+// ======================== SUPABASE CONFIG ========================
+var SB_URL = localStorage.getItem('zhie_sb_url') || 'https://hrlvzwtoxhvtqosipivc.supabase.co';
+var SB_KEY = localStorage.getItem('zhie_sb_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhybHZ6d3RveGh2dHFvc2lwaXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzY3NjEsImV4cCI6MjA5NTAxMjc2MX0.WOrkeovoWGCoJfI1BQyUW6OYz4xw-qor5rOffviaRiI';
+
+// ======================== IMAGE PREVIEW ========================
+function previewImage(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('img-preview').src = e.target.result;
+    document.getElementById('img-preview-wrap').style.display = 'block';
+    document.getElementById('img-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ======================== UPLOAD IMAGE TO SUPABASE ========================
+async function uploadImageToSupabase(file) {
+  var status = document.getElementById('img-upload-status');
+  status.style.display = 'block';
+  status.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:var(--accent);margin-right:6px;"></i>圖片上傳中...';
+
+  var ext = file.name.split('.').pop();
+  var fileName = 'product_' + Date.now() + '.' + ext;
+
+  try {
+    var res = await fetch(SB_URL + '/storage/v1/object/products/' + fileName, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+
+    if (!res.ok) {
+      var err = await res.text();
+      throw new Error(err);
+    }
+
+    var publicUrl = SB_URL + '/storage/v1/object/public/products/' + fileName;
+    document.getElementById('m-img-url').value = publicUrl;
+    status.innerHTML = '<i class="fa-solid fa-check" style="color:var(--success);margin-right:6px;"></i>圖片上傳成功！';
+    return publicUrl;
+
+  } catch(e) {
+    status.innerHTML = '<i class="fa-solid fa-xmark" style="color:var(--danger);margin-right:6px;"></i>上傳失敗：' + e.message;
+    return null;
+  }
+}
+
 // ======================== PRODUCT MODAL ========================
 function openProductModal(editIdx) {
   document.getElementById('modal-title-text').textContent = editIdx !== undefined ? '編輯產品' : '新增產品';
@@ -831,21 +912,54 @@ function openProductModal(editIdx) {
   document.getElementById('m-name-en').value = '';
   document.getElementById('m-spec').value = '';
   document.getElementById('m-desc').value = '';
+  document.getElementById('m-img-url').value = '';
+  document.getElementById('m-img-file').value = '';
+  document.getElementById('img-preview-wrap').style.display = 'none';
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('product-modal').classList.add('open');
 }
 function closeProductModal() {
   document.getElementById('product-modal').classList.remove('open');
 }
-function saveProduct() {
+async function saveProduct() {
   var name = document.getElementById('m-name-tw').value;
   if (!name) { showToast('請填寫產品名稱！', true); return; }
+
+  var btn = document.getElementById('save-product-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>儲存中...';
+
+  // Upload image if file selected
+  var file = document.getElementById('m-img-file').files[0];
+  var imgUrl = document.getElementById('m-img-url').value;
+  if (file && !imgUrl) {
+    imgUrl = await uploadImageToSupabase(file);
+  }
+
   var spec = document.getElementById('m-spec').value;
   var status = document.getElementById('m-status').value;
-  var statusBadge = status === 'active' ? '<span class="badge badge-active" style="margin-left:8px;">上架中</span>' : '<span class="badge badge-draft" style="margin-left:8px;">草稿</span>';
+  var statusBadge = status === 'active'
+    ? '<span class="badge badge-active" style="margin-left:8px;">上架中</span>'
+    : '<span class="badge badge-draft" style="margin-left:8px;">草稿</span>';
+
+  var imgHtml = imgUrl
+    ? '<img src="' + imgUrl + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,200,255,0.2);flex-shrink:0;" />'
+    : '<div class="product-dot" style="background:#00c8ff;"></div>';
+
   var item = document.createElement('div');
   item.className = 'product-item';
-  item.innerHTML = '<div class="product-dot" style="background:#00c8ff;"></div><div class="product-info"><div class="product-title">' + name + '</div><div class="product-meta">' + spec + statusBadge + '</div></div><div class="product-actions"><button class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i></button><button class="btn btn-danger btn-sm" onclick="this.closest(\'.product-item\').remove()"><i class="fa-solid fa-trash"></i></button></div>';
+  item.innerHTML = imgHtml +
+    '<div class="product-info"><div class="product-title">' + name + '</div>' +
+    '<div class="product-meta">' + spec + statusBadge + '</div></div>' +
+    '<div class="product-actions">' +
+    '<button class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i></button>' +
+    '<button class="btn btn-danger btn-sm" onclick="this.closest(\'.product-item\').remove()"><i class="fa-solid fa-trash"></i></button>' +
+    '</div>';
   document.getElementById('products-list').appendChild(item);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>儲存產品';
   closeProductModal();
   showToast('產品已新增！');
 }
