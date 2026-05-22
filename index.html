@@ -84,11 +84,11 @@
   /* MOBILE MENU */
   #mobile-menu { display: none; }
   #mobile-menu.open { display: block; }
-  .hamburger { display: none; }
+  .hamburger { display: none !important; }
   @media(max-width:900px){
-    .hamburger { display: flex; flex-direction:column; gap:5px; cursor:pointer; padding:8px; background:none; border:none; }
+    .hamburger { display: flex !important; flex-direction:column; gap:5px; cursor:pointer; padding:8px; background:none; border:none; }
     .hamburger span { display:block; width:22px; height:2px; background:var(--steel); transition:0.3s; border-radius:2px; }
-    .nav-desktop { display: none; }
+    .nav-desktop { display: none !important; }
     #mobile-menu { position:fixed; top:80px; left:0; right:0; background:rgba(5,13,26,0.97); backdrop-filter:blur(20px); padding:1rem 1.5rem 1.5rem; border-bottom:1px solid rgba(0,200,255,0.1); z-index:99; }
     #mobile-menu a, #mobile-menu button { display:block; width:100%; text-align:left; padding:0.75rem 0; border-bottom:1px solid rgba(255,255,255,0.05); color:var(--steel); font-size:1.05rem; text-decoration:none; background:none; border-top:none; border-left:none; border-right:none; cursor:pointer; }
     #mobile-menu .lang-options { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
@@ -246,7 +246,7 @@
       </div>
     </div>
 
-    <div class="nav-links nav-desktop flex items-center gap-1">
+    <div class="nav-links nav-desktop" style="display:flex;align-items:center;gap:0.25rem;">
       <a href="#" onclick="showSection('about');return false;" id="nav-about" class="nav-link" data-i18n="nav_about">關於我們</a>
       <a href="#" onclick="showSection('products');return false;" id="nav-products" class="nav-link" data-i18n="nav_products">產品</a>
       <a href="#" onclick="showSection('solutions');return false;" id="nav-solutions" class="nav-link" data-i18n="nav_solutions">解決方案</a>
