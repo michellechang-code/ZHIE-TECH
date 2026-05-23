@@ -446,74 +446,7 @@
         <button class="btn btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus" style="margin-right:6px;"></i>新增產品</button>
       </div>
 
-      <div id="products-list">
-        <div class="product-item">
-          <div class="product-dot"></div>
-          <div class="product-info">
-            <div class="product-title">2.0" Mono LCM 顯示模組</div>
-            <div class="product-meta">128×64 / STN / 工業級寬溫 <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(0)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(0)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="product-item">
-          <div class="product-dot"></div>
-          <div class="product-info">
-            <div class="product-title">2.4" Mono LCM 顯示模組</div>
-            <div class="product-meta">240×128 / STN·FSTN / SPI·I2C <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(1)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(1)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="product-item">
-          <div class="product-dot" style="background:#00c8ff;"></div>
-          <div class="product-info">
-            <div class="product-title">4.3" TFT 彩色顯示模組</div>
-            <div class="product-meta">480×272 / RGB / HMI <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(2)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(2)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="product-item">
-          <div class="product-dot" style="background:#00c8ff;"></div>
-          <div class="product-info">
-            <div class="product-title">4.3" HMI 智慧控制顯示器</div>
-            <div class="product-meta">480×272 / 內建控制器 / UART <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(3)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(3)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="product-item">
-          <div class="product-dot" style="background:#00c8ff;"></div>
-          <div class="product-info">
-            <div class="product-title">7.0" TFT 寬螢幕顯示模組</div>
-            <div class="product-meta">800×480 / RGB·LVDS / 車載 <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(4)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(4)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="product-item">
-          <div class="product-dot" style="background:#b088ff;"></div>
-          <div class="product-info">
-            <div class="product-title">客製化 LCM 解決方案</div>
-            <div class="product-meta">依客戶規格全程設計開發 <span class="badge badge-active" style="margin-left:8px;">上架中</span></div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editProduct(5)"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct(5)"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-      </div>
+      <div id="products-list"><div style="color:var(--steel);font-size:0.85rem;padding:1.5rem;text-align:center;"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>載入中...</div></div>
     </div>
 
     <!-- ====== SOLUTIONS ====== -->
@@ -748,6 +681,7 @@ function doLogin() {
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     document.getElementById('login-screen').style.display = 'none';
     updateLastSave();
+    loadProducts();
   } else {
     document.getElementById('login-error').style.display = 'block';
   }
@@ -775,6 +709,7 @@ function showPage(name) {
   if (page) page.classList.add('active');
   var titles = { dashboard:'儀表板', about:'關於我們', products:'產品管理', solutions:'解決方案', contact:'聯絡資訊', lang:'多語言設定', settings:'系統設定' };
   document.getElementById('page-title').textContent = titles[name] || name;
+  if (name === 'products') loadProducts();
   // Activate sidebar item
   document.querySelectorAll('.nav-item').forEach(function(n){
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+name+"'")) n.classList.add('active');
@@ -905,9 +840,57 @@ async function uploadImageToSupabase(file) {
   }
 }
 
+// ======================== PRODUCT CRUD (Supabase) ========================
+
+// 載入產品列表
+async function loadProducts() {
+  var list = document.getElementById('products-list');
+  list.innerHTML = '<div style="color:var(--steel);font-size:0.85rem;padding:1rem;"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>載入中...</div>';
+  try {
+    var res = await fetch(SB_URL + '/rest/v1/products?order=created_at.asc', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    var data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      list.innerHTML = '<div style="color:var(--steel);font-size:0.85rem;padding:1.5rem;text-align:center;"><i class="fa-solid fa-box-open" style="font-size:2rem;display:block;margin-bottom:0.75rem;opacity:0.4;"></i>尚無產品，點「新增產品」開始新增</div>';
+      return;
+    }
+    list.innerHTML = '';
+    data.forEach(function(p) { list.appendChild(renderProductItem(p)); });
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--danger);font-size:0.85rem;padding:1rem;"><i class="fa-solid fa-circle-exclamation" style="margin-right:8px;"></i>載入失敗，請確認 Supabase 設定</div>';
+  }
+}
+
+// 渲染單一產品列表項目
+function renderProductItem(p) {
+  var statusBadge = p.status === 'active'
+    ? '<span class="badge badge-active" style="margin-left:8px;">上架中</span>'
+    : '<span class="badge badge-draft" style="margin-left:8px;">草稿</span>';
+  var imgHtml = p.image_url
+    ? '<img src="' + p.image_url + '" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,200,255,0.2);flex-shrink:0;" />'
+    : '<div class="product-dot" style="background:#00c8ff;margin-top:4px;"></div>';
+  var item = document.createElement('div');
+  item.className = 'product-item';
+  item.setAttribute('data-id', p.id);
+  item.innerHTML = imgHtml +
+    '<div class="product-info">' +
+    '<div class="product-title">' + (p.name_tw || '') + '</div>' +
+    '<div class="product-meta">' + (p.spec || '') + statusBadge + '</div>' +
+    '</div>' +
+    '<div class="product-actions">' +
+    '<button class="btn btn-secondary btn-sm" onclick="editProductById(' + p.id + ')"><i class="fa-solid fa-pen"></i></button>' +
+    '<button class="btn btn-danger btn-sm" onclick="deleteProductById(' + p.id + ',this)"><i class="fa-solid fa-trash"></i></button>' +
+    '</div>';
+  return item;
+}
+
 // ======================== PRODUCT MODAL ========================
+var _editingProductId = null;
+
 function openProductModal(editIdx) {
-  document.getElementById('modal-title-text').textContent = editIdx !== undefined ? '編輯產品' : '新增產品';
+  _editingProductId = null;
+  document.getElementById('modal-title-text').textContent = '新增產品';
   document.getElementById('m-name-tw').value = '';
   document.getElementById('m-name-en').value = '';
   document.getElementById('m-spec').value = '';
@@ -919,50 +902,103 @@ function openProductModal(editIdx) {
   document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('product-modal').classList.add('open');
 }
+
 function closeProductModal() {
   document.getElementById('product-modal').classList.remove('open');
+  _editingProductId = null;
 }
+
+async function editProductById(id) {
+  try {
+    var res = await fetch(SB_URL + '/rest/v1/products?id=eq.' + id, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    var data = await res.json();
+    if (!data || !data[0]) return;
+    var p = data[0];
+    _editingProductId = id;
+    document.getElementById('modal-title-text').textContent = '編輯產品';
+    document.getElementById('m-name-tw').value = p.name_tw || '';
+    document.getElementById('m-name-en').value = p.name_en || '';
+    document.getElementById('m-spec').value = p.spec || '';
+    document.getElementById('m-desc').value = p.description || '';
+    document.getElementById('m-cat').value = p.category || 'tft';
+    document.getElementById('m-status').value = p.status || 'active';
+    document.getElementById('m-img-url').value = p.image_url || '';
+    document.getElementById('img-upload-status').style.display = 'none';
+    if (p.image_url) {
+      document.getElementById('img-preview').src = p.image_url;
+      document.getElementById('img-preview-wrap').style.display = 'block';
+      document.getElementById('img-placeholder').style.display = 'none';
+    } else {
+      document.getElementById('img-preview-wrap').style.display = 'none';
+      document.getElementById('img-placeholder').style.display = 'block';
+    }
+    document.getElementById('product-modal').classList.add('open');
+  } catch(e) { showToast('載入產品資料失敗', true); }
+}
+
+async function deleteProductById(id, btn) {
+  if (!confirm('確定要刪除此產品嗎？')) return;
+  try {
+    await fetch(SB_URL + '/rest/v1/products?id=eq.' + id, {
+      method: 'DELETE',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    var item = btn.closest('.product-item');
+    if (item) item.remove();
+    showToast('產品已刪除');
+  } catch(e) { showToast('刪除失敗', true); }
+}
+
 async function saveProduct() {
-  var name = document.getElementById('m-name-tw').value;
+  var name = document.getElementById('m-name-tw').value.trim();
   if (!name) { showToast('請填寫產品名稱！', true); return; }
 
   var btn = document.getElementById('save-product-btn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>儲存中...';
 
-  // Upload image if file selected
+  // 上傳圖片
   var file = document.getElementById('m-img-file').files[0];
   var imgUrl = document.getElementById('m-img-url').value;
-  if (file && !imgUrl) {
-    imgUrl = await uploadImageToSupabase(file);
+  if (file) { imgUrl = await uploadImageToSupabase(file) || imgUrl; }
+
+  var payload = {
+    name_tw: name,
+    name_en: document.getElementById('m-name-en').value.trim(),
+    spec: document.getElementById('m-spec').value.trim(),
+    category: document.getElementById('m-cat').value,
+    description: document.getElementById('m-desc').value.trim(),
+    image_url: imgUrl,
+    status: document.getElementById('m-status').value
+  };
+
+  try {
+    var method = _editingProductId ? 'PATCH' : 'POST';
+    var url = SB_URL + '/rest/v1/products' + (_editingProductId ? '?id=eq.' + _editingProductId : '');
+    var res = await fetch(url, {
+      method: method,
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    closeProductModal();
+    showToast(_editingProductId ? '產品已更新！' : '產品已新增！');
+    loadProducts(); // 重新載入列表
+  } catch(e) {
+    showToast('儲存失敗：' + e.message, true);
   }
-
-  var spec = document.getElementById('m-spec').value;
-  var status = document.getElementById('m-status').value;
-  var statusBadge = status === 'active'
-    ? '<span class="badge badge-active" style="margin-left:8px;">上架中</span>'
-    : '<span class="badge badge-draft" style="margin-left:8px;">草稿</span>';
-
-  var imgHtml = imgUrl
-    ? '<img src="' + imgUrl + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,200,255,0.2);flex-shrink:0;" />'
-    : '<div class="product-dot" style="background:#00c8ff;"></div>';
-
-  var item = document.createElement('div');
-  item.className = 'product-item';
-  item.innerHTML = imgHtml +
-    '<div class="product-info"><div class="product-title">' + name + '</div>' +
-    '<div class="product-meta">' + spec + statusBadge + '</div></div>' +
-    '<div class="product-actions">' +
-    '<button class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i></button>' +
-    '<button class="btn btn-danger btn-sm" onclick="this.closest(\'.product-item\').remove()"><i class="fa-solid fa-trash"></i></button>' +
-    '</div>';
-  document.getElementById('products-list').appendChild(item);
 
   btn.disabled = false;
   btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>儲存產品';
-  closeProductModal();
-  showToast('產品已新增！');
 }
+
 function editProduct(idx) {
   openProductModal(idx);
   document.getElementById('modal-title-text').textContent = '編輯產品';
@@ -1005,3 +1041,4 @@ function showToast(msg, isError) {
 </script>
 </body>
 </html>
+
